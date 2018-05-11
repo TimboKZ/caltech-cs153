@@ -84,7 +84,7 @@
                 $y$, denoting them $x_i$ and $y_i$. Note that for every row $i$
                 in TRIBES, we're solving the complement of $\textrm{DISJ}(x_i,
                 y_i)$. Thus we can take the matrix $M_{\textrm{DISJ}}$ (size
-                $2^{\sqrt{n}} \x 2^\sqrt{n}$) and invert its boolean values
+                $2^{\sqrt{n}} \x 2^{\sqrt{n}}$) and invert its boolean values
                 component-wise to obtain a matrix that encodes the output of
                 $\lor_j(x_{ij} \land y_{ij})$. Since we started of with a DISJ
                 matrix of rank $2^{\sqrt{n}}$, we can show that the rank of the
@@ -97,14 +97,14 @@
                 is that we're solving $\sqrt{n}$ co-DISJ problems and taking
                 the product of the results to determine the output of TRIBES. 
                 \\\\
-                We start off with a $2^{\sqrt{n}} \x 2^\sqrt{n}$ matrix $T_0 =
-                T*$. As mentioned earlier, this corresponds to TRIBES ran on a
-                single row of size $\sqrt{n}$. We can now transform this matrix
-                to encode the output of TRIBES on two rows of size $\sqrt{n}$.
-                We duplicate every row $i$ in $T_0$ exactly $2^{\sqrt{n}}$
-                times. Next, we also duplicate all columns $j$ in $T_0$ exactly
-                $2^{\sqrt{n}}$ times, obtaining a matrix of size $2^{2\sqrt{n}}
-                \x 2^{2\sqrt{n}}$.
+                We start off with a $2^{\sqrt{n}} \x 2^{\sqrt{n}}$ matrix $T_0
+                = T*$. As mentioned earlier, this corresponds to TRIBES ran on
+                a single row of size $\sqrt{n}$. We can now transform this
+                matrix to encode the output of TRIBES on two rows of size
+                $\sqrt{n}$.  We duplicate every row $i$ in $T_0$ exactly
+                $2^{\sqrt{n}}$ times. Next, we also duplicate all columns $j$
+                in $T_0$ exactly $2^{\sqrt{n}}$ times, obtaining a matrix of
+                size $2^{2\sqrt{n}} \x 2^{2\sqrt{n}}$.
                 \\\\
                 Next, we produce a matrix $T_0^*$ by duplicating (tiling) the
                 whole matrix $T^*$ vertically and horizontally exactly
@@ -182,7 +182,7 @@
                 $N^0(\textrm{TRIBES})$.
                 \\\\
                 The lower bound can be proved by showing a 0-fooling set of
-                size $2^\sqrt{n}$. Suppose that our all powerful prover has
+                size $2^{\sqrt{n}}$. Suppose that our all powerful prover has
                 pointed out some row $i$, so now we only need to check rows
                 $x_i$ and $y_i$ (each of size $\sqrt{n}$) to make sure they
                 don't share any common 1's. Consider all possible vectors $z
@@ -194,8 +194,8 @@
                 y_j) = 1$ or $\lor_j(x_j \land y^*_j) = 1$. Since $|\{0,
                 1\}^{\sqrt{n}}| = 2^{\sqrt{n}}$, we can collect all pairs into
                 a 0-fooling $S$ of size $2^{\sqrt{n}}$ that targets a single
-                row. This means we need to exchange at least $\log 2^\sqrt{n}$
-                bits to check row $i$, proving the lower bound
+                row. This means we need to exchange at least $\log
+                2^{\sqrt{n}}$ bits to check row $i$, proving the lower bound
                 $N^0(\textrm{TRIBES}) \geq \Omega(\sqrt{n})$.
                 \\\\
                 Combining the lower and upper bound, we get
