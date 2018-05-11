@@ -80,17 +80,16 @@
                 rank $2^k$ when the set size is $k$ and the universe can be
                 thought of as all bitmasks of such sets of form $\{0, 1\}^k$.
                 \\\\
-                Consider $i$th rows of $\sqrt{n} \x \sqrt{n}$ matrices $x$
-                and $y$, denoting them $x_i$ and $y_i$. Note that for every
-                row $i$ in TRIBES, we're solving the complement of
-                $\textrm{DISJ}(x_i, y_i)$. Thus we can take the matrix
-                $M_{\textrm{DISJ}}$ ($2^{\sqrt{n}} \x 2^\sqrt{n}$) and invert its
-                boolean values component-wise to obtain a matrix that encodes
-                the output of $\lor_j(x_{ij} \land y_{ij})$. Since we started
-                of with a DISJ matrix of rank $2^{\sqrt{n}}$, we can show that
-                the rank of the resultant matrix is also $2^{\sqrt{n}}$ by
-                replacing $0$'s with $-1$'s. Denote the final matrix from the
-                previous step $T^*$.
+                Consider $i$th rows of $\sqrt{n} \x \sqrt{n}$ matrices $x$ and
+                $y$, denoting them $x_i$ and $y_i$. Note that for every row $i$
+                in TRIBES, we're solving the complement of $\textrm{DISJ}(x_i,
+                y_i)$. Thus we can take the matrix $M_{\textrm{DISJ}}$ (size
+                $2^{\sqrt{n}} \x 2^\sqrt{n}$) and invert its boolean values
+                component-wise to obtain a matrix that encodes the output of
+                $\lor_j(x_{ij} \land y_{ij})$. Since we started of with a DISJ
+                matrix of rank $2^{\sqrt{n}}$, we can show that the rank of the
+                resultant matrix is also $2^{\sqrt{n}}$ by replacing $0$'s with
+                $-1$'s. Denote the final matrix from the previous step $T^*$.
                 \\\\
                 Now we can use $T^*$ to generate a matrix that encodes the
                 output of $\textrm{TRIBES}(x, y)$ on any inputs $x, y$ while
