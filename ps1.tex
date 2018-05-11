@@ -43,16 +43,17 @@
         can conclude that $R^{\textrm{pub}}_0(f) \geq \log t$.
         \\\\
         An example of a function that has an exponential gap between
-        $R^{\textrm{pub}}_0$ and $R^{\textrm{pub}}_{1/3}$ is the
-        $\textrm{EQ}_2$. If the outputs of $f$ can be encoded in a matrix of
-        size $n \x n$, we know that the only values for which $\textrm{EQ}_2$
-        evaluates to 1 are the values on the diagonal, and they can be used as
-        the fooling set. Since the size of this fooling set is $n$, we know
-        that $R_0(\textrm{EQ}_2) \geq \log n$ (by argument above).
+        $R^{\textrm{pub}}_0$ and $R^{\textrm{pub}}_{1/3}$ is $\textrm{EQ}_2$.
+        If the outputs of $f$ can be encoded in a matrix of size $n \x n$, we
+        know that the only values for which $\textrm{EQ}_2$ evaluates to 1 are
+        the values on the diagonal, and they can be used as the fooling set.
+        Since the size of this fooling set is $n$, we know that
+        $R^{\textrm{pub}}_0(\textrm{EQ}_2) \geq \log n$ (by argument above).
         \\\\
-        On the other hand, if we're allowed to be wrong on $1/3$ fraction of
-        inputs, our protocol can pick a part of the public random string, $r
-        \in \{ 0, 1 \}^n$. Then, Alice can calculate the dot product of $r$ and
+        We can significantly decrease the amount of bits exchanged if we're
+        allowed to be wrong on $1/3$ fraction of inputs. Our protocol can start
+        by picking a substring of the public random string, denoting it $r \in
+        \{ 0, 1 \}^n$.  Then, Alice can calculate the dot product of $r$ and
         her value $a$ (mod 2), send the resulting 1 bit over to Bob, and let
         Bob take the same inner product and compare the values. If the actual
         values $a$ and $b$ held by Alice and Bob are equal, this will produce
@@ -74,41 +75,59 @@
                 communication complexity $O(n)$. This proves the upper bound
                 for the problem.
                 \\\\ 
-                The lower bound can be proved by showing a 0-fooling set of
-                size $2^n$. Consider a $\sqrt{n} \x \sqrt{n}$ matrix consisting
-                of $1$'s, call it $M$. We can pick a row $i$ and a column $j$
-                and define two new matrices $M^0_{i,j}$ and $M^1_{i,j}$.
-                $M^0_{i,j}$ will have the same structure as $M$, except on row
-                $i$ it will have $0$'s everywhere but the $j$th column.
-                $M^1_{i,j}$ will also have the same structure as $M$, but on
-                row $i$ it will have $1$'s everywhere except the $j$th column.
+                To show the lower bound we can reuse some ideas from the DISJ
+                problem. Recall that the matrix encoding outputs of DISJ has
+                rank $2^k$ when the set size is $k$ and the universe can be
+                thought of as all bitmasks of such sets of form $\{0, 1\}^k$.
                 \\\\
-                Note that $\textrm{TRIBES}(M^0_{i,j}, M^1_{i,j}) = 0$ because
-                $M^0_{i,j}$ and $M^1_{i,j}$ have different boolean values at
-                each position of row $i$. We can now define a fooling set $S$:
-                $$ S = \{ (M^0_{i,j}, M^1_{i,j}): i, j \in \{ 1, \ldots,
-                \sqrt{n} \}\} $$
-
-                $S$ is a fooling set because none of the pairs in $S$ can
-                belong to the same 0-rectangle. We can show this by taking two
-                distinct pairs $(M^0_{i,j}, M^1_{i,j}), (M^0_{p,q}, M^1_{p,q})
-                \in S$ such that $p \neq i$ or $q \neq j$ (or both). When $p
-                \neq i$, $M^0_{i,j}$ and $M^1_{p,q}$ (or vice versa) have 0's
-                on different rows, so in each row both matrices have a 1 in at
-                least one position, and hence $\textrm{TRIBES}$ will evaluate
-                to 1. When $q \neq j$, $M^0_{i,j}$ and $M^1_{p,q}$ (or vice
-                versa) have 0's in the same column, but because of the $q \neq
-                j$ mismatch they will still share exactly one 1 element on that
-                row. Therefore $\textrm{TRIBES}$ will evaluate to 1.
+                Consider $i$th rows of $\sqrt{n} \x \sqrt{n}$ matrices $x$
+                and $y$, denoting them $x_i$ and $y_i$. Note that for every
+                row $i$ in TRIBES, we're solving the complement of
+                $\textrm{DISJ}(x_i, y_i)$. Thus we can take the matrix
+                $M_{\textrm{DISJ}}$ ($2^{\sqrt{n}} \x 2^\sqrt{n}$) and invert its
+                boolean values component-wise to obtain a matrix that encodes
+                the output of $\lor_j(x_{ij} \land y_{ij})$. Since we started
+                of with a DISJ matrix of rank $2^{\sqrt{n}}$, we can show that
+                the rank of the resultant matrix is also $2^{\sqrt{n}}$ by
+                replacing $0$'s with $-1$'s. Denote the final matrix from the
+                previous step $T^*$.
                 \\\\
-                Now we can consider the size of $S$. We can flatten out each
-                array $M^*$ into a row vector of size $n$. Note that by
-                definition of our $M^1_{i,j}$, the flat version of $M^1_{i,j}$
-                will have 1's everywhere but the $(i \sqrt{n} + j)$th index,
-                where it will have a 0. By this simple observation we can
-                conclude that there.
+                Now we can use $T^*$ to generate a matrix that encodes the
+                output of $\textrm{TRIBES}(x, y)$ on any inputs $x, y$ while
+                also showing that overall rank is $2^n$. The key insight here
+                is that we're solving $\sqrt{n}$ co-DISJ problems and taking
+                the product of the results to determine the output of TRIBES. 
+                \\\\
+                We start off with a $2^{\sqrt{n}} \x 2^\sqrt{n}$ matrix $T_0 =
+                T*$. As mentioned earlier, this corresponds to TRIBES ran on a
+                single row of size $\sqrt{n}$. We can now transform this matrix
+                to encode the output of TRIBES on two rows of size $\sqrt{n}$.
+                We duplicate every row $i$ in $T_0$ exactly $2^{\sqrt{n}}$
+                times. Next, we also duplicate all columns $j$ in $T_0$ exactly
+                $2^{\sqrt{n}}$ times, obtaining a matrix of size $2^{2\sqrt{n}}
+                \x 2^{2\sqrt{n}}$.
+                \\\\
+                Next, we produce a matrix $T_0^*$ by duplicating (tiling) the
+                whole matrix $T^*$ vertically and horizontally exactly
+                $2^{\sqrt{n}}$ times. Finally, we take the component-wise
+                product of $T_0$ and $T_0^*$ and denote it $T_1$. Note that
+                $T_1$ encodes the the output of TRIBES on two rows of size
+                $\sqrt{n}$ because it's produced by first considering co-DISJ
+                matrices of each row, and then taking the logical AND of the
+                two matrices. It also still has full rank if we replace $0$'s
+                with $-1$'s.
+                \\\\
+                Repeating the procedure above $\sqrt{n}$ times in total gives
+                us a matrix $T_{\sqrt{n}}$ that encodes the output of
+                TRIBES on $\sqrt{n} \x \sqrt{n}$ matrices, while also having
+                full rank of $2^n$. It follows that deterministic complexity of
+                TRIBES is bounded below by $\Omega(\log 2^n)$ or  just
+                $\Omega(n)$.
+                \\\\
+                Combining the lower and upper bound, we get
+                $D(\textrm{TRIBES}) = \Theta(n)$.
                 \\
-
+                
             \item By definition of the problem, to show that
                 $\textrm{TRIBES}(x,y) = 1$ we only need to find one index $j$
                 on every row $i$ such that $x_{i,j} = y_{i,j} = 1$. Therefore
@@ -163,23 +182,25 @@
                 complexity of $O(\sqrt{n})$, proving the upper bound for
                 $N^0(\textrm{TRIBES})$.
                 \\\\
-                The lower bound for $N^0$ can be proved by showing a 0-fooling
-                set of size $2^{\sqrt{n}}$. Consider a $\sqrt{n} \x \sqrt{n}$
-                matrix consisting of $1$'s, call it $M$. We can pick a row $i$
-                and a column $j$ and define two new matrices $M^0_{i,j}$ and
-                $M^1_{i,j}$. $M^0_{i,j}$ will have the same structure as $M$,
-                except on row $i$ it will have $0$'s everywhere but the $j$th
-                column. $M^1_{i,j}$ will also have the same structure as $M$,
-                but on row $i$ it will have $1$'s everywhere except the $j$th
-                column.
+                The lower bound can be proved by showing a 0-fooling set of
+                size $2^\sqrt{n}$. Suppose that our all powerful prover has
+                pointed out some row $i$, so now we only need to check rows
+                $x_i$ and $y_i$ (each of size $\sqrt{n}$) to make sure they
+                don't share any common 1's. Consider all possible vectors $z
+                \in \{0, 1\}^{\sqrt{n}}$ and define its complement $z^c$, which
+                has all bits flipped. For each $z$, define a pair $(x,y)$ where
+                $x = z$ and $y = z^c$. Clearly, $\lor_j(x_j \land y_j) = 0$,
+                and by definition of $z$, for any two distinct pairs $(x, y),
+                (x^*, y^*)$ it must be true that either $\lor_j(x^*_j \land
+                y_j) = 1$ or $\lor_j(x_j \land y^*_j) = 1$. Since $|\{0,
+                1\}^{\sqrt{n}}| = 2^{\sqrt{n}}$, we can collect all pairs into
+                a 0-fooling $S$ of size $2^{\sqrt{n}}$ that targets a single
+                row. This means we need to exchange at least $\log 2^\sqrt{n}$
+                bits to check row $i$, proving the lower bound
+                $N^0(\textrm{TRIBES}) \geq \Omega(\sqrt{n})$.
                 \\\\
-                Note that $\textrm{TRIBES}(M^0_{i,j}, M^1_{i,j}) = 0$ because
-                $M^0_{i,j}$ and $M^1_{i,j}$ have different boolean values at
-                each position of row $i$. We can now define a fooling set $S$:
-                $$ S = \{ (M^0_{i,j}, M^1_{i,j}): i, j \in \{ 1, \ldots,
-                \sqrt{n} \}\} $$
-
-
+                Combining the lower and upper bound, we get
+                $N^0(\textrm{TRIBES}) = \Theta(\sqrt{n})$.
                 \\
         \end{enumerate}
 
