@@ -15,6 +15,7 @@
 \input{latex-common/snippets/urls.tex} %-- module-snippet: latex-common/urls
 \input{latex-common/snippets/figures.tex} %-- module-snippet: latex-common/figures
 \input{latex-common/snippets/code.tex} %-- module-snippet: latex-common/code
+\input{latex-common/snippets/misc.tex} %-- module-snippet: latex-common/misc
 %-- Rammy end ------------------
 
 % Don't wrap long matrices
@@ -27,10 +28,42 @@
 
 \begin{enumerate}
 
-    \item Solutions:
-        \begin{enumerate}[label=(\alph*)]
-            \item Test
-        \end{enumerate}
+    \item To prove the lower bound in the question, we can view the relevant
+        randomized protocol as a distribution over deterministic protocols,
+        where for each deterministic protocol the public random string is
+        fixed. Since we only allow zero error, each of these deterministic
+        protocols must calculate $f$ exactly.
+        \\\\
+        Assume that $f$ has a fooling set of size $t$. It follows that any
+        determenistic protocol computing $f$ has its communication complexity
+        bounded below by $\log t$. Combining this assumption with the
+        idea from the previous paragraph, we can say that whatever
+        deterministic protocol we pick from our distribution, it is guaranteed
+        to have communication complexity $D(f) \geq \log t$. Hence we
+        can conclude that $R^{\textrm{pub}}_0(f) \geq \log t$.
+        \\\\
+        An example of a function that has an exponential gap between
+        $R^{\textrm{pub}}_0$ and $R^{\textrm{pub}}_{1/3}$ is the
+        $\textrm{EQ}_2$. If the outputs of $f$ can be encoded in a matrix of
+        size $n \x n$, we know that the only values for which $\textrm{EQ}_2$
+        evaluates to 1 are the values on the diagonal, and they can be used as
+        the fooling set. Since the size of this fooling set is $n$, we know
+        that $R_0(\textrm{EQ}_2) \geq \log n$ (by argument above).
+        \\\\
+        On the other hand, if we're allowed to be wrong on $1/3$ fraction of
+        inputs, our protocol can pick a part of the public random string, $r
+        \in \{ 0, 1 \}^n$. Then, Alice can calculate the dot product of $r$ and
+        her value $a$ (mod 2), send the resulting 1 bit over to Bob, and let
+        Bob take the same inner product and compare the values. If the actual
+        values $a$ and $b$ held by Alice and Bob are equal, this will produce
+        the correct result with probability 1. If the values were not equal,
+        this approach can produce an incorrect result with probablity $1/2$. To
+        satisfy the error bound of $1/3$, we can repeat this process $k \geq 2$
+        times for some fixed $k$, each time using a different substring of the
+        random string, halving the probability of error. Since $k$ is constant,
+        the communication complexity is $O(1)$, and hence we have an
+        exponential decrease from $R^{\textrm{pub}}_0$.
+        \\
 
     \item TRIBES function requires that $x$ and $y$ share at least one 1 on
         every row of the matrix. Solutions:
@@ -40,13 +73,46 @@
                 requires $n$ bits, and wait for Bob's answer, giving overall
                 communication complexity $O(n)$. This proves the upper bound
                 for the problem.
-                
-                TODO: Show lower bound.
+                \\\\ 
+                The lower bound can be proved by showing a 0-fooling set of
+                size $2^n$. Consider a $\sqrt{n} \x \sqrt{n}$ matrix consisting
+                of $1$'s, call it $M$. We can pick a row $i$ and a column $j$
+                and define two new matrices $M^0_{i,j}$ and $M^1_{i,j}$.
+                $M^0_{i,j}$ will have the same structure as $M$, except on row
+                $i$ it will have $0$'s everywhere but the $j$th column.
+                $M^1_{i,j}$ will also have the same structure as $M$, but on
+                row $i$ it will have $1$'s everywhere except the $j$th column.
+                \\\\
+                Note that $\textrm{TRIBES}(M^0_{i,j}, M^1_{i,j}) = 0$ because
+                $M^0_{i,j}$ and $M^1_{i,j}$ have different boolean values at
+                each position of row $i$. We can now define a fooling set $S$:
+                $$ S = \{ (M^0_{i,j}, M^1_{i,j}): i, j \in \{ 1, \ldots,
+                \sqrt{n} \}\} $$
+
+                $S$ is a fooling set because none of the pairs in $S$ can
+                belong to the same 0-rectangle. We can show this by taking two
+                distinct pairs $(M^0_{i,j}, M^1_{i,j}), (M^0_{p,q}, M^1_{p,q})
+                \in S$ such that $p \neq i$ or $q \neq j$ (or both). When $p
+                \neq i$, $M^0_{i,j}$ and $M^1_{p,q}$ (or vice versa) have 0's
+                on different rows, so in each row both matrices have a 1 in at
+                least one position, and hence $\textrm{TRIBES}$ will evaluate
+                to 1. When $q \neq j$, $M^0_{i,j}$ and $M^1_{p,q}$ (or vice
+                versa) have 0's in the same column, but because of the $q \neq
+                j$ mismatch they will still share exactly one 1 element on that
+                row. Therefore $\textrm{TRIBES}$ will evaluate to 1.
+                \\\\
+                Now we can consider the size of $S$. We can flatten out each
+                array $M^*$ into a row vector of size $n$. Note that by
+                definition of our $M^1_{i,j}$, the flat version of $M^1_{i,j}$
+                will have 1's everywhere but the $(i \sqrt{n} + j)$th index,
+                where it will have a 0. By this simple observation we can
+                conclude that there.
+                \\
 
             \item By definition of the problem, to show that
                 $\textrm{TRIBES}(x,y) = 1$ we only need to find one index $j$
                 on every row $i$ such that $x_{i,j} = y_{i,j} = 1$. Therefore
-                an all-powerful prover just needs to point out these indices on
+                an all powerful prover just needs to point out these indices on
                 each row. There are $\sqrt{n}$ rows, and each column index
                 takes $\textrm{log}_2 (\sqrt{n})$ bits to represent, giving us
                 an overall bit count of $\sqrt{n} \cdot \frac{1}{2}
@@ -69,7 +135,7 @@
                 matrices that start off as an identity matrix, but have either
                 1 within some row shifted left or right, or have some rows
                 swapped, or both. Then we can define the fooling set $S$ as:
-                $$ S = \{ ((M^*, M^*): \textrm{distinct } M^* \in M \} $$
+                $$ S = \{ (M^*, M^*): \textrm{distinct } M^* \in M \} $$
 
                 Clearly, this a 1-fooling set because for any two distinct
                 pairs $(M_1, M_2), (M_1^*, M_2^*) \in S$, neither $(M_1,
@@ -90,7 +156,7 @@
 
             \item To show that $\textrm{TRIBES}(x,y) = 0$, we need to find a
                 single row $i$ where in each position $j$ we have $x_{i,j}
-                \land y_{i,j} = 0$. Our all-powerful prover can identify this
+                \land y_{i,j} = 0$. Our all powerful prover can identify this
                 row and show its index to Alice and Bob. Then, Alice can send
                 Bob a bitmask of said row, taking up $\sqrt{n}$ bits in total.
                 Including the 1 bit of Bob's reply, we get the overall
@@ -98,22 +164,96 @@
                 $N^0(\textrm{TRIBES})$.
                 \\\\
                 The lower bound for $N^0$ can be proved by showing a 0-fooling
-                set of size $2^{\sqrt{n}}$.
+                set of size $2^{\sqrt{n}}$. Consider a $\sqrt{n} \x \sqrt{n}$
+                matrix consisting of $1$'s, call it $M$. We can pick a row $i$
+                and a column $j$ and define two new matrices $M^0_{i,j}$ and
+                $M^1_{i,j}$. $M^0_{i,j}$ will have the same structure as $M$,
+                except on row $i$ it will have $0$'s everywhere but the $j$th
+                column. $M^1_{i,j}$ will also have the same structure as $M$,
+                but on row $i$ it will have $1$'s everywhere except the $j$th
+                column.
+                \\\\
+                Note that $\textrm{TRIBES}(M^0_{i,j}, M^1_{i,j}) = 0$ because
+                $M^0_{i,j}$ and $M^1_{i,j}$ have different boolean values at
+                each position of row $i$. We can now define a fooling set $S$:
+                $$ S = \{ (M^0_{i,j}, M^1_{i,j}): i, j \in \{ 1, \ldots,
+                \sqrt{n} \}\} $$
+
+
                 \\
         \end{enumerate}
 
-    \item Solutions:
+    \item $\textrm{CIS}_G$ solutions:
         \begin{enumerate}[label=(\alph*)]
-            \item A disconnected graph with a clique of size two and any amount
-                of independent vertices. This way, whatever the size of
-                independent set that Alice holds, she only ever needs
-                communicate whether she holds one of the vertices in the
-                clique. If we enumerate all nodes in $G$ as $1, \ldots, n$, the
-                amount of bits exchanged is $2\, \textrm{log}\,n + 2$ (checking
-                each of the nodes in the clique and waiting for Bob's reply),
-                which gives us complexity $O(\textrm{log}\,n)$ overall.
+            \item We can prove the lower bound $\Omega(\log n)$ by finding a
+                fooling set of size $n$ for some $G$. Consider a complete graph
+                $G$ with $n$ nodes. We can generate a clique-independent-set
+                pair $(C, I)$ by picking a single node $x^*$ and defining
+                $I = \{ x^* \}$, then putting the remaining $n - 1$ nodes into
+                the clique $C$. Clearly, $I$ is an independent set because it
+                only has one node, and $C$ is a clique because any subgraph of
+                a complete graph is also complete.
+                \\\\
+                Since there are $n$ nodes in total, we can define $n$ distinct
+                clique-independent-set pairs using this procedure. Putting them
+                all into a set $S$ we get a 0-fooling set: for any pair $(C, I)
+                \in S$, $\textrm{CIS}_G(C, I) = 0$, but for any two distinct
+                pairs $(C, I), (C^*, I^*) \in S$ we have $\textrm{CIS}_G(C,
+                I^*) = 1$ and $\textrm{CIS}_G(C^*, I) = 1$ (by definition of
+                pairs in $S$).
+                \\\\
+                It follows that the deterministic complexity for
+                $\textrm{CIS}_G$ with our choice of $G$ is bounded below by
+                $\Omega(\log |S|)$, or, equivalently, $\Omega(\log n)$.
+                \\
 
-            \item `
+            \item The question wants us to prove that $D(\textrm{CIS}_G) \leq
+                O(\log^c n)$ implies $D(f) \leq O(\log^c C^D(f))$ for an
+                arbitrary choice of a boolean function $f$.
+                \\\\
+                Let $M_f$ be the matrix corresponding to outputs of $f$. We
+                know that there exists some disjoint cover of $M_f$ using
+                monochromatic rectangles. Let $C^*$ be the smallest such cover.
+                By definition, $C^D(f) = |C^*|$. Now, consider only the
+                1-rectangles from $C^*$, denoting that set as $C^*_1$. Note
+                that $|C^*_1| \leq |C^*|$. We can produce a graph $G$ that
+                encodes our problem using the following procedure. Start off
+                with a disconnected graph $G$ that has a node corresponding to 
+                every 1-rectangle in $C^*_1$. Next, for every row $x_i$ in
+                $M_f$, if said row intersects some 1-rectangles from $C^*_1$,
+                connect these rectanges into a clique in $G$. Repeat until
+                we've considered all rows from $M_f$. The resulting $G$ only
+                depends on the function $f$ (and not its inputs), so it can be
+                encoded as a part of the protocol. As such, it is known to both
+                Alice and Bob beforehand.
+                \\\\
+                Now, assume the input for function $f$ is $(x, y)$, where Alice
+                holds $x$ and Bob holds $y$. Alice looks at row $x$ in $M_f$,
+                and defines her clique to be all 1-rectangles from $C^*_1$ that
+                intersect row $x$. Bob looks at row $y$ and defines his
+                independent set to be all 1-rectangles that intersect row $y$.
+                Note that this set is guaranteed to be indepdendent because all
+                nodes in $G$ were initially disconnected, and we've only
+                connected 1-rectangles that intersected a common row. Since our
+                rectangle cover is disjoint, rectangles that intersect some
+                common row cannot also intersect a common column.
+                \\\\
+                At this point we have an instance of $\textrm{CIS}_G$, where
+                $G$ is the graph we generated earlier and the inputs are the
+                clique and the independent set picked by Alice and Bob
+                respectively. By our assumption, there exists a protocol that
+                computes $\textrm{CIS}_G$ in $O(\log^c n)$ bits, where $n$ is
+                the size of the graph. Since our graph $G$ has $|C^*_1| \leq
+                C^D(f)$ nodes, we can safely say that there exists a protocol
+                that computes our instance of $\textrm{CIS}_G$ in $O(\log^c
+                C^D(f))$ bits. We can interpret the output as follows: if we
+                get a 1, then $x$ and $y$ both hit the same 1-rectangle, which
+                is only possible when $f(x,y) = 1$. On the other hand, if the
+                output is 0, then $x$ and $y$ don't share any 1-rectangles,
+                so $f(x,y) = 0$. Since we didn't communicate any extra bits
+                beyond solving the $\textrm{CIS}_G$ problem, we can conclude
+                that $D(f) \leq O(\log^c C^D(f))$.
+                \\
         \end{enumerate}
 
 \end{enumerate}
