@@ -1,0 +1,6 @@
+{
+  "rammyVersion": "0.1.0",
+  "modules": {
+    "latex-common": "latex-common"
+  }
+}

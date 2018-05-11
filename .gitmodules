@@ -1,0 +1,3 @@
+[submodule "latex-common"]
+	path = latex-common
+	url = https://github.com/TimboKZ/latex-common.git

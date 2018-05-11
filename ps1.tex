@@ -1,0 +1,122 @@
+%-- Generated using Rammy v0.1.0 | github.com/TimboKZ/Rammy
+%-- Module: latex-common
+%-- Template: lecture-notes
+
+%-- summary: Template for lecture notes with a lot of useful snippets.
+
+\documentclass{article}
+
+% Title for the `compact-header` snippet
+\newcommand\HeaderTitle{\textbf{CS 153 Problem Set \#1 Solutions} by Timur Kuzhagaliyev}
+
+%-- Rammy start ----------------
+\input{latex-common/snippets/symbols.tex} %-- module-snippet: latex-common/symbols
+\input{latex-common/snippets/compact-header.tex} %-- module-snippet: latex-common/compact-header
+\input{latex-common/snippets/urls.tex} %-- module-snippet: latex-common/urls
+\input{latex-common/snippets/figures.tex} %-- module-snippet: latex-common/figures
+\input{latex-common/snippets/code.tex} %-- module-snippet: latex-common/code
+%-- Rammy end ------------------
+
+% Don't wrap long matrices
+\setcounter{MaxMatrixCols}{20}
+
+\usepackage{enumitem} 
+
+\begin{document}
+
+
+\begin{enumerate}
+
+    \item Solutions:
+        \begin{enumerate}[label=(\alph*)]
+            \item Test
+        \end{enumerate}
+
+    \item TRIBES function requires that $x$ and $y$ share at least one 1 on
+        every row of the matrix. Solutions:
+        \begin{enumerate}[label=(\alph*)]
+            \item The most straightforward way to solve $\textrm{TRIBES}(x, y)$
+                is for Alice to just send over her entire matrix, which
+                requires $n$ bits, and wait for Bob's answer, giving overall
+                communication complexity $O(n)$. This proves the upper bound
+                for the problem.
+                
+                TODO: Show lower bound.
+
+            \item By definition of the problem, to show that
+                $\textrm{TRIBES}(x,y) = 1$ we only need to find one index $j$
+                on every row $i$ such that $x_{i,j} = y_{i,j} = 1$. Therefore
+                an all-powerful prover just needs to point out these indices on
+                each row. There are $\sqrt{n}$ rows, and each column index
+                takes $\textrm{log}_2 (\sqrt{n})$ bits to represent, giving us
+                an overall bit count of $\sqrt{n} \cdot \frac{1}{2}
+                \textrm{log}_2 n$. Alice can send over these values to Bob and
+                wait for him to confirm that there is a match. Hence the upper
+                bound on $N^1(\textrm{TRIBES})$ is $O(\sqrt{n}\;\textrm{log}\,
+                n)$.
+                \\\\
+                We can use the fooling set technique to show the lower bound.
+                Consider a $1\x\sqrt{n}$ vector $e_i^T$, which has zeros
+                everywhere except the $i$th position. Consider a matrix $x$
+                where each row is a vector $e_{i_k}$ for some $i_k \in \{ 1,
+                \ldots, \sqrt{n} \}$. Clearly, $\textrm{TRIBES}(x, x) = 1$
+                because $x$ has at least one 1 on each row. At the same time,
+                if we permute any of the rows of $x$ by shifting the 1 in that
+                row left or right and define the new matrix $x^*$, we'll see
+                that $\textrm{TRIBES}(x, x^*) = 0$ because there is now at
+                least one row where $x$ and $x^*$ do not match up. We can
+                exploit this to generate a fooling set. Let $M$ be the set of
+                matrices that start off as an identity matrix, but have either
+                1 within some row shifted left or right, or have some rows
+                swapped, or both. Then we can define the fooling set $S$ as:
+                $$ S = \{ ((M^*, M^*): \textrm{distinct } M^* \in M \} $$
+
+                Clearly, this a 1-fooling set because for any two distinct
+                pairs $(M_1, M_2), (M_1^*, M_2^*) \in S$, neither $(M_1,
+                M_2^*)$ nor $(M_1^*, M_2)$ can be evaluated to 1 since they
+                must differ in at least one place (we can show by contradiction
+                that if this is not the case, the pairs must be identical). Now
+                for the size of this fooling set: there are $\sqrt{n}$ rows in
+                total, and for each row we have $\sqrt{n}$ different choices
+                for the vector $e_i^T$. This means that $|S| =
+                \sqrt{n}^{\sqrt{n}}$, and we can obtain a lower bound
+                $N^1(\textrm{TRIBES}) \geq \Omega(\textrm{log}\, \left(
+                \sqrt{n}^{\sqrt{n}} \right) )$, or, equivalently,
+                $N^1(\textrm{TRIBES}) \geq \Omega(\sqrt{n}\;\textrm{log}\,n)$.
+                \\\\
+                Combining the lower and upper bound, we get
+                $N^1(\textrm{TRIBES}) = \Theta(\sqrt{n}\;\textrm{log}\,n)$.
+                \\
+
+            \item To show that $\textrm{TRIBES}(x,y) = 0$, we need to find a
+                single row $i$ where in each position $j$ we have $x_{i,j}
+                \land y_{i,j} = 0$. Our all-powerful prover can identify this
+                row and show its index to Alice and Bob. Then, Alice can send
+                Bob a bitmask of said row, taking up $\sqrt{n}$ bits in total.
+                Including the 1 bit of Bob's reply, we get the overall
+                complexity of $O(\sqrt{n})$, proving the upper bound for
+                $N^0(\textrm{TRIBES})$.
+                \\\\
+                The lower bound for $N^0$ can be proved by showing a 0-fooling
+                set of size $2^{\sqrt{n}}$.
+                \\
+        \end{enumerate}
+
+    \item Solutions:
+        \begin{enumerate}[label=(\alph*)]
+            \item A disconnected graph with a clique of size two and any amount
+                of independent vertices. This way, whatever the size of
+                independent set that Alice holds, she only ever needs
+                communicate whether she holds one of the vertices in the
+                clique. If we enumerate all nodes in $G$ as $1, \ldots, n$, the
+                amount of bits exchanged is $2\, \textrm{log}\,n + 2$ (checking
+                each of the nodes in the clique and waiting for Bob's reply),
+                which gives us complexity $O(\textrm{log}\,n)$ overall.
+
+            \item `
+        \end{enumerate}
+
+\end{enumerate}
+
+
+\end{document}
