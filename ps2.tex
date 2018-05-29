@@ -1,0 +1,101 @@
+%-- Generated using Rammy v0.1.0 | github.com/TimboKZ/Rammy
+%-- Module: latex-common
+%-- Template: problem-set
+
+%-- summary: Template for lecture notes with a lot of useful snippets.
+
+\documentclass{article}
+
+\usepackage[table]{xcolor}
+
+% Title for the `compact-header` snippet
+\newcommand\HeaderSubject{CS 153~~~Communication Complexity}
+\newcommand\HeaderAuthor{Timur Kuzhagaliyev}
+
+%-- Rammy start ----------------
+\input{latex-common/snippets/symbols.tex} %-- module-snippet: latex-common/symbols
+\input{latex-common/snippets/problem-set-header.tex} %-- module-snippet: latex-common/problem-set-header
+\input{latex-common/snippets/urls.tex} %-- module-snippet: latex-common/urls
+\input{latex-common/snippets/figures.tex} %-- module-snippet: latex-common/figures
+\input{latex-common/snippets/code.tex} %-- module-snippet: latex-common/code
+\input{latex-common/snippets/misc.tex} %-- module-snippet: latex-common/misc
+%-- Rammy end ------------------
+
+% Don't wrap long matrices
+\setcounter{MaxMatrixCols}{20}
+
+\begin{document}
+\problemset{Problem Set \#2 Solutions}{Out: May 22}{Due: \bf {June 1}}
+
+\begin{enumerate}
+    \item Solutions:  
+    \begin{enumerate}
+        \item We can show that the inequality in the question holds by
+            considering the structure of $M_1$ and $M_2$. The breakdown of
+            matrix of $M$ into $M_1$ and $M_2$looks like
+
+            \begin{equation}\label{eq:appendrow}
+                \left(\begin{array}{c>{\columncolor{olive!20}}cc}
+                \x  & X_1 \x T & \x \\
+               \rowcolor{blue!20}
+               S \x Y_1 & S \x T & S \x Y_2 \\
+                \x & X_2 \x T & \x \\
+              \end{array}\right)
+            \end{equation}
+
+            where the highlighted row is matrix $M_1$, the highlighted column
+            is the matrix $M_2$ and $X_1, S, X_2$ with $Y_1, T, Y_2$ are
+            partitions of $X$ and $Y$ respectively. Note that due to the
+            structure of given matrices, the standard rank of $M_1$ is bound
+            above by $|S|$ and the standard rank of $M_2$ is bound above by
+            $|T|$, and the same bounds apply to $triangle-rank$.
+            \\\\
+            Note also that $S \x T$ is a zero matrix - this means that
+            regardless of how rows or columns from $S \x T$ are permuted within
+            $M_1$ or $M_2$, they will not change the $triangle-rank$. As such,
+            there is no reason to permute rows indexed by $S$ in $M_2$ and no
+            reason to permute columns indexed by $T$ in $M_1$. This creates a
+            convenient ``mask'' that lets us permute rows and columns of $M$
+            and build desired square submatrices inside $M_1$ and $M_2$ without 
+            undoing any progress.
+            \\\\
+            Now we can put the two points from above together to define a
+            procedure that proves the desired inequality. We start off with
+            $M$. Next we permute rows and columns of $M$ to build the largest
+            square submatrix with ones in diagonals on zeros below the diagonal
+            in both $M_1$ and $M_2$ (showing $triangle-rank$ of these
+            matrices). As discussed previously, we can do that without any
+            clashes.
+            \\\\
+            Denote such square submatrices $S_1$ in $M_1$ and $S_2$ in $M_2$.
+            Finally, we permute columns of resultant $M$ to put $S_1$ into the
+            top left corner of block $S \x Y_2$, and then permute rows of
+            resultant $M$ to put $S_2$ into the bottom right corner of block
+            $X_1 \x T$. As a result of this operation, we have transformed $M$
+            in such a way that it now contains a square matrix that is a tensor
+            product of $S_1$ and $S_2$ (with the exception of the top right
+            corner which contains arbitrary values and doesn't affect
+            $triangle-rank$). Hence we have shown that if matrices $M_1$ and
+            $M_2$ have $triangle-rank$ of $m$ and $n$ respectively, we can
+            permute rows and columns of $M$ to build a square submatrix of side
+            length $m + n$ with ones on the diagonal and zeroes below the
+            diagonal, showing that the $triangle-rank$ of matrix $M$ must be at
+            least $m + n$.
+
+    \end{enumerate}
+
+    \item We can assume $X \x Y$ is a square matrix - if it isn't, we can just
+        pad out one of the sides to make it square. 
+        \\\\
+        \TODO{Can show this by proving that there must a big monochromatic
+        rectangle of size $\geq 2^{-c(r)}|X||Y|$, then showing that we can
+        recursively say yes or no to recurse into one of the smaller
+        rectangles, at every step either halving the rank of making the matrix
+        much smaller}.
+
+    \item 
+
+\end{enumerate}
+
+
+\end{document}
