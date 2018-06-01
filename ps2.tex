@@ -86,72 +86,85 @@
             \\
 
         \item We can prove the desired bound using induction on triangle-rank.
-            We begin by outling a protocol that uses $N^0(M_f) + 1$ bits per
-            round of communication. Note that the smallest non-disjoint
-            0-monochromatic cover of $M_f$ contains $2^{N^0(M_f)}$ rectangles.
-            Note that if we enumerate these rectangles from $1$ to
-            $2^{N^0(M_f)}$, it will take exactly $N^0(M_f)$ bits to communicate
-            the index of the rectangle.
+            The high level overview of the protocol is as follows. Before
+            communication begins, Alice and Bob fix the smallest non-disjoint
+            0-cover of $M_f$. Denote the set of all rectangles in that cover as
+            $C_0$. Note that $log_2 |C_0| = N^0(M_f)$, so it takes $N^0(M_f)$
+            bits to communicate the index of each rectangle in $C_0$. Alice and
+            Bob maintain sets $A$ and $B$ respectively, where $A$ is the set of
+            rows that are still in the search space for Alice and $B$ is the
+            set of columns that are still in the search space for Bob. Both $A$
+            and $B$ start off as the full matrix $M_f$. On input $x^*$ for
+            Alice, which corresponds to row $x$ in the matricx, and input $y^*$
+            for Bob, which corresponds to column $y$ of the matrix, Alice and
+            Bob proceed as follows.
             \\\\
-            Now our protocol proceeds as follows. Alice and Bob maintain sets
-            $A$ and $B$ respectively. $A$ indicates the set of \textit{columns}
-            in the search space (for Alice). $B$ indicates the set of
-            \textit{rows} in the search space (for Bob). Initially, both $A$
-            and $B$ contain the entire matrix $M_f$.
-            \\\\
-            In the beginning, Alice holds some row $x$ and Bob holds some
-            column $y$ in $M_f$ (as the inputs).  Alice begins iterating over
-            all rectangles $R_A = S \x T$ in the 0-cover we fixed earlier such
-            that:
+            Alice begins the communication. She iterates over all $S \x T$
+            rectangles $R_A \in C_0$ that satisfy the three conditions below
+            until she runs out of suitable rectangles. Conditions for each
+            $R_A$ are:
             \begin{enumerate}
-                \item $R_A$ intersects her row $x$,
-                \item Restricting the matrix to columns indexed by $S$ cuts the
-                    triangle-rank of the matrix by at least a factor of 2, and
-                \item At least one of the columns of $R_A$ overlaps with set
+                \item $R_A$ intersects her row $x$.
+                \item At least one of the rows of $R_A$ overlaps with the set
                     $A$.
+                \item Denote $M^A$ as the matrix representing Alice's search
+                    space, $A \x Y$. Restricting Alice's search space $A$ to
+                    the rows that only appear in both $A$ and $S$
+                    (intersection) should cut the rank of $M_A$ by at least a
+                    factor of 2.
             \end{enumerate}
             \\\\
-            All rectangles that do not satisfy above conditions are ignored.
-            For every $R_A$, Alice transmits the index of $R_A$ to Bob. Bob
-            replies with either $0$ or $1$ to indicate whether his column $y$
-            also intersects $R_A$. If Bob returns $1$, then $x$ and $y$ both
-            intersect the same 0-rectangle, and the output $f(x, y)$ must be 0,
-            so we're done. Otherwise, Alice removes columns covered by $R_A$
-            from her set $A$ and proceeds to the next loop iteration. The
-            amount of bits exchanged per iteration is $N^0(M_f) + 1$.
+            When Alice finds such a rectangle, she sends its index over to Bob.
+            Bob replies with $0$ if his column $y$ also intersects this
+            0-rectangle or $1$ otherwise. Note that if Bob replies $0$,
+            protocol can terminate since Alice and Bob found a 0-rectangle that
+            they both intersect, so $f(x,y) = 0$. Otherwise, if Bob replies
+            $1$, Alice restricts her $A$ to the rows that appear in
+            intersection of $A$ and $S$ and continues the search. Note that
+            since Bob also knows the index of the rectangle, he know what
+            Alices $A$ looks like.
             \\\\
-            Eventually, Alice and Bob either agree on some rectangle that Alice
-            proposed or Alice runs out of rectangles that satisfy the three
-            conditions we specified. If Alice runs out of 0-rectangle
-            candidates, she signals this to Bob using 1 bit. Assume that the
-            actual output of $f(x,y)$ is $0$. In this case, there must exist a
-            0-monochromatic rectangle $S \x T$ that intersects both row $x$ and
-            column $y$. Denote the triangle-rank of submatrix $S \x Y$ by
-            $\Delta M_1$ and triangle-rank of submatrix $X \x T$ by $\Delta
-            M_2$. Since Alice cannot find the desired 0-rectangle, it must be
-            the case that $\Delta M_1 > \frac{1}{2} \Delta M_f$. Combining this
-            with the inequality from part (a), we get $\Delta M_2 < \frac{1}{2}
-            \Delta M_f$. This means that Bob can run the same loop using his
-            $x$ and $B$ to find the desired 0-rectangle and conclude that the
-            output of $f(x, y)$ is indeed $0$, exchanging the same amount of
-            bits per iteration.
+            Because of the conditions we imposed on suitable $R_A$s, Alice cuts
+            the triangle-rank of $A \x Y$ by at least a factor of 2 on every
+            iteration. Additionally, every iteration takes $N^0(M_f) + 1$ bits
+            of communication. Once Alice runs out of suitable rectangles, she
+            signals Bob to take over. Bob now begins the same iteration
+            process, but considering columns instead of rows and using $A \x B$
+            as his seach space, cutting triangle-rank at every step by
+            shrinking $B$. If at some point Alice confirms that she's in the
+            0-rectangle that Bob specified, the protocol can terminate since
+            $f(x,y) = 0$. Otherwise, Bob runs out of suitable rectangles and
+            signals this fact to Alice, so both parties can conclude that
+            $f(x,y) = 1$.
             \\\\
-            In the case when $f(x, y) = 1$, Bob will still attempt to execute
-            the same loop, but he will eventually run out of candidate
-            0-rectangles (since Alice will just reject everything). If this
-            happens, Bob communicates this to Alice with one bit and the
-            parties will conclude that the output is $1$.
+            The correctness of this protocol is easy to show. If Alice
+            transmits an index of a 0-rectangle and Bob accepts it (or vice
+            versa), the conclusion is trivial. When Alice runs out of
+            rectangles and has to signal Bob, there are 2 cases: $f(x,y) = 1$
+            and $f(x,y) = 0$. If $f(x,y) = 1$, then regardless of which
+            rectangle Bob picks, Alice will never accept it, and Bob will
+            eventually run out of rectangles so parties will conclude $f(x,y) =
+            1$. On the other hand, if $f(x,y) = 0$, then there must exist some
+            $S \x T$ 0-rectangle that both $x$ and $y$ intersect. We know
+            that Alice was not able to find this rectangle, so it must be the
+            case that $\tr((A \cap S) \x Y) \geq \frac{1}{2}\tr(A \x Y)$. By
+            rearranging the inequality from part (a), we can show that $\tr(A
+            \x T) \leq \frac{1}{2}\tr(A \x Y)$, which means that Bob must
+            consider this rectangle during his search. Since Bob is going to
+            transmit its index, Alice must accept it and both parties will
+            conclude $f(x,y) = 0$.
             \\\\
-            We can now use the protocol outline to prove the desired bound on
+            We can now use this protocol outline to prove the desired bound on
             communication complexity using induction on triangle-rank.
             \begin{itemize}
-                \item \textbf{Inductive hypothesis}: Assume that the formula
+                \item \textbf{Inductive hypothesis}: Assume that the inequality
                     $$D(M_f) \leq (\log_2(\tr(M_f) + 1) + 1)
                     (N^0(M_f) + 1)$$ holds for all $M_f = A' \x B'$ such that 
                     $\tr(A' \x B') < t$.
+                    \\
 
                 \item \textbf{Base case}: $\tr(M_f) = 0$. In this case, we have
-                    an all $0$ matrix, so there is a 0-cover of size 1, hence
+                    an all $0$s matrix, so there is a 0-cover of size 1, hence
                     $N^0(M_f) = \log_2(1) = 0$. Using our protocol, Alice
                     transmits $N^0(M_f)$ bits, or, in other words, doesn't
                     transmit anything since the index is trivial. Bob replies
@@ -164,28 +177,48 @@
                             \\ &= (0+1) (1)
                             \\ &= 1
                     \end{align*}
+                    $\log_2(\ldots + 1)$ guarantees that we don't hit $\log_2
+                    0$.
+                    \\
+
                 \item \textbf{Inductive step}: Need to show that formula holds
                     for $M_f = A \x B$ s.t. $\tr(A \x B) = t$. As per the
                     protocol we outlined above, Alice starts searching for a
                     suitable 0-rectangle from the cover first.
-                    \\\\
+                    \\
+
                     \textbf{Case 1}: Alice finds some $S \x T$ rectangle $R_A$
-                    and sends its index over to Bob. If Bob replies with $1$,
+                    and sends its index over to Bob. If Bob replies with $0$,
                     parties have found a common 0-rectangle and the protocol
                     can terminate with output $0$ after having exchanged only
-                    $N^0(M_f) + 1$ bits. Clearly, the formula is satisfied.
-                    \\\\
-                    On the other hand, if Bob rejects $R_A$, Alice can remove
-                    the columns that touch $R_A$ from her set $A$. We can show
-                    that this action decreases the triangle-rank of her search
-                    space by a factor of 2: For Alice to pick $R_A$,
-                    restricting $M_f$ to the rows indexed by $S$ must've cut
-                    the triangle-rank but 
+                    $N^0(M_f) + 1$ bits. Clearly, the inequality holds since we
+                    undershoort our budget by having only 1 round. If Bob
+                    replies with $1$, Alice has to continue the search. At this
+                    stage, we have expended $N^0(M_f) + 1$ bits, but we have
+                    also at least halved the the triangle-rank of our search
+                    space, which means that we're still within our budget of
+                    $\log_2 ( \tr(A \x B) + 1) + 1$ rounds. We decrease the
+                    triangle rank of our search space, and we know that the
+                    inequality holds for values $< t$, so it must also hold for
+                    $t$. Note that we're adding $1$ to the result of $\log_2
+                    (\ldots)$ - this equivalent to ``rounding up'' our upper
+                    bound in the inequality, which is necessary since the
+                    actual number of bits exchhanged in the protocol is
+                    discrete.
+                    \\
 
                     \textbf{Case 2}: Alice doesn't find a suitable rectangle,
                     so she has to tell Bob that he needs to begin the search.
-                    There are two possibilities here: If $f(x,y) = 0$, 
+                    She hands the control over to Bob. Earlier, we have proved
+                    the correctness of the algorithm, so Bob should be able to
+                    carry on. What we have now is logic from Case 1 carried out
+                    by Bob instead of Alice. Clearly, the inequality still
+                    holds.
+                    \\
+                \item By induction, the proposed inequality holds for all
+                    values of $t \geq 0$. 
             \end{itemize}
+            \\
 
     \end{enumerate}
 
