@@ -25,6 +25,8 @@
 % Don't wrap long matrices
 \setcounter{MaxMatrixCols}{20}
 
+\newcommand\tr{\textrm{triangle-rank}}
+
 \begin{document}
 \problemset{Problem Set \#2 Solutions}{Out: May 22}{Due: \bf {June 1}}
 
@@ -34,15 +36,14 @@
         \item We can show that the inequality in the question holds by
             considering the structure of $M_1$ and $M_2$. The breakdown of
             matrix of $M$ into $M_1$ and $M_2$looks like
-
-            \begin{equation}\label{eq:appendrow}
+            \begin{gather*}
                 \left(\begin{array}{c>{\columncolor{olive!20}}cc}
                 \x  & X_1 \x T & \x \\
                \rowcolor{blue!20}
                S \x Y_1 & S \x T & S \x Y_2 \\
                 \x & X_2 \x T & \x \\
               \end{array}\right)
-            \end{equation}
+            \end{gather*}
 
             where the highlighted row is matrix $M_1$, the highlighted column
             is the matrix $M_2$ and $X_1, S, X_2$ with $Y_1, T, Y_2$ are
@@ -82,29 +83,172 @@
             length $m + n$ with ones on the diagonal and zeroes below the
             diagonal, showing that the triangle-rank of matrix $M$ must be at
             least $m + n$.
+            \\
 
         \item We can prove the desired bound using induction on triangle-rank.
-            We can start by fixing a 0-cover on $M_f$.
+            We begin by outling a protocol that uses $N^0(M_f) + 1$ bits per
+            round of communication. Note that the smallest non-disjoint
+            0-monochromatic cover of $M_f$ contains $2^{N^0(M_f)}$ rectangles.
+            Note that if we enumerate these rectangles from $1$ to
+            $2^{N^0(M_f)}$, it will take exactly $N^0(M_f)$ bits to communicate
+            the index of the rectangle.
+            \\\\
+            Now our protocol proceeds as follows. Alice and Bob maintain sets
+            $A$ and $B$ respectively. $A$ indicates the set of \textit{columns}
+            in the search space (for Alice). $B$ indicates the set of
+            \textit{rows} in the search space (for Bob). Initially, both $A$
+            and $B$ contain the entire matrix $M_f$.
+            \\\\
+            In the beginning, Alice holds some row $x$ and Bob holds some
+            column $y$ in $M_f$ (as the inputs).  Alice begins iterating over
+            all rectangles $R_A = S \x T$ in the 0-cover we fixed earlier such
+            that:
+            \begin{enumerate}
+                \item $R_A$ intersects her row $x$,
+                \item Restricting the matrix to columns indexed by $S$ cuts the
+                    triangle-rank of the matrix by at least a factor of 2, and
+                \item At least one of the columns of $R_A$ overlaps with set
+                    $A$.
+            \end{enumerate}
+            \\\\
+            All rectangles that do not satisfy above conditions are ignored.
+            For every $R_A$, Alice transmits the index of $R_A$ to Bob. Bob
+            replies with either $0$ or $1$ to indicate whether his column $y$
+            also intersects $R_A$. If Bob returns $1$, then $x$ and $y$ both
+            intersect the same 0-rectangle, and the output $f(x, y)$ must be 0,
+            so we're done. Otherwise, Alice removes columns covered by $R_A$
+            from her set $A$ and proceeds to the next loop iteration. The
+            amount of bits exchanged per iteration is $N^0(M_f) + 1$.
+            \\\\
+            Eventually, Alice and Bob either agree on some rectangle that Alice
+            proposed or Alice runs out of rectangles that satisfy the three
+            conditions we specified. If Alice runs out of 0-rectangle
+            candidates, she signals this to Bob using 1 bit. Assume that the
+            actual output of $f(x,y)$ is $0$. In this case, there must exist a
+            0-monochromatic rectangle $S \x T$ that intersects both row $x$ and
+            column $y$. Denote the triangle-rank of submatrix $S \x Y$ by
+            $\Delta M_1$ and triangle-rank of submatrix $X \x T$ by $\Delta
+            M_2$. Since Alice cannot find the desired 0-rectangle, it must be
+            the case that $\Delta M_1 > \frac{1}{2} \Delta M_f$. Combining this
+            with the inequality from part (a), we get $\Delta M_2 < \frac{1}{2}
+            \Delta M_f$. This means that Bob can run the same loop using his
+            $x$ and $B$ to find the desired 0-rectangle and conclude that the
+            output of $f(x, y)$ is indeed $0$, exchanging the same amount of
+            bits per iteration.
+            \\\\
+            In the case when $f(x, y) = 1$, Bob will still attempt to execute
+            the same loop, but he will eventually run out of candidate
+            0-rectangles (since Alice will just reject everything). If this
+            happens, Bob communicates this to Alice with one bit and the
+            parties will conclude that the output is $1$.
+            \\\\
+            We can now use the protocol outline to prove the desired bound on
+            communication complexity using induction on triangle-rank.
+            \begin{itemize}
+                \item \textbf{Inductive hypothesis}: Assume that the formula
+                    $$D(M_f) \leq (\log_2(\tr(M_f) + 1) + 1)
+                    (N^0(M_f) + 1)$$ holds for all $M_f = A' \x B'$ such that 
+                    $\tr(A' \x B') < t$.
+
+                \item \textbf{Base case}: $\tr(M_f) = 0$. In this case, we have
+                    an all $0$ matrix, so there is a 0-cover of size 1, hence
+                    $N^0(M_f) = \log_2(1) = 0$. Using our protocol, Alice
+                    transmits $N^0(M_f)$ bits, or, in other words, doesn't
+                    transmit anything since the index is trivial. Bob replies
+                    with 0 to acknowledge that he's in the same rectangle. In
+                    total, we have 1 bit of communication, and $D(M_f) = 1$.
+                    Indeed, the formula holds for our base case:
+                    \begin{align*}
+                        D(M_f) &\leq (log_2(\tr(M_f) + 1) +1) (N^0(M_f) + 1)
+                            \\ &= (log_2(0 + 1) +1) (0 + 1)
+                            \\ &= (0+1) (1)
+                            \\ &= 1
+                    \end{align*}
+                \item \textbf{Inductive step}: Need to show that formula holds
+                    for $M_f = A \x B$ s.t. $\tr(A \x B) = t$. As per the
+                    protocol we outlined above, Alice starts searching for a
+                    suitable 0-rectangle from the cover first.
+                    \\\\
+                    \textbf{Case 1}: Alice finds some $S \x T$ rectangle $R_A$
+                    and sends its index over to Bob. If Bob replies with $1$,
+                    parties have found a common 0-rectangle and the protocol
+                    can terminate with output $0$ after having exchanged only
+                    $N^0(M_f) + 1$ bits. Clearly, the formula is satisfied.
+                    \\\\
+                    On the other hand, if Bob rejects $R_A$, Alice can remove
+                    the columns that touch $R_A$ from her set $A$. We can show
+                    that this action decreases the triangle-rank of her search
+                    space by a factor of 2: For Alice to pick $R_A$,
+                    restricting $M_f$ to the rows indexed by $S$ must've cut
+                    the triangle-rank but 
+
+                    \textbf{Case 2}: Alice doesn't find a suitable rectangle,
+                    so she has to tell Bob that he needs to begin the search.
+                    There are two possibilities here: If $f(x,y) = 0$, 
+            \end{itemize}
 
     \end{enumerate}
 
-    \item In class, we have covered a theorem which stated that for any boolean
-        function $f$ with rank$(M_f) = r$ and a monochromatic rectangle $R$ in 
-        $M_f$ with size $|R| \geq 2^{-c(r)} \abs{X}\abs{Y}$, the deterministic
-        complexity is $$D(f) \leq O(\log^2 r) + O \left(\sum^{\log r}_{i=1}
-        c(\frac{r}{2i}) \right)$$.
-
-        Clearly, showing that $c(r) = \log(r)$ implies that the log-rank 
-        conjecture holds. To show that the conjecture holds with our notion of
-        Boolean-rank, we can show that any $f: X \x Y \ra \{0, 1\}$ with 
-        Boolean-rank$(M_f) = r$ admits a monochromatic rectangle $R$ of size
-        $\abs{R} \geq \frac{1}{r} \abs{X} \abs{Y}.$
+    \item We can prove that the log-rank conjecture holds for our notion of
+        rank by reducing the problem of calculating the output $f(x, y)$ to an
+        instance of $CIS_G$. I will assume that matrix multiplication is done
+        using the standard dot product of rows and columns (as opposed to
+        $\inner \mod 2$).
         \\\\
-        \TODO{Can show this by proving that there must a big monochromatic
-        rectangle of size $\geq 2^{-c(r)}|X||Y|$, then showing that we can
-        recursively say yes or no to recurse into one of the smaller
-        rectangles, at every step either halving the rank of making the matrix
-        much smaller}.
+        Denote the Boolean-rank of an $N \x N$ matrix $M$ as $r$. Then there
+        must exist an $N \x r$ Boolean matrix $U$ and an $r \x N$ Boolean
+        matrix $V$ such that $M = UV$. Note that if we use standard matrix
+        multiplication, this is only possible when $\sum_{q=0}^r U_{iq} *
+        V_{qj} \in \{0,1\}$ for all $i,j \in \{ 1, \ldots, N \}$. This, in
+        turn, implies that every row $x$ in $U$ and every row $y$ in $V$ share
+        at most one index $p$ such that $x_p * y_p = 1$ (for all remaining
+        indices $p'$, it must be the case that $x_{p'} * y_{p'} = 0$). We can
+        exploit this fact in our reduction to $CIS_G$.
+        \\\\
+        Given a function $f: X \x Y \rightarrow \{ 0,1 \}$ and the
+        corresponding $M_f$ with $\textrm{Booleank-rank}(M_f) = r$, we can
+        construct a graph $G$ as follows. $G$ will have $r$ nodes, denoted
+        $a_i$ for $i \in \{ 1, \ldots, r \}.$ The node $a_i$ corresponds to
+        $i$th column of $U$ and $i$th row of $V$. We then add edges as follows.
+        For every row $x$ in $U$, we treat $x$ as a bitmap of nodes from $G$,
+        where $x_i = 1$ means that the bitmap includes node $a_i$.  We connect
+        all nodes $a_i$ that appear in the bitmap $x$ together, so that they
+        form a clique. Graph $G$ is now ready to be used in $CIS_G$.
+        \\\\
+        The protocol works as follows. Before communiction begins, both Alice
+        and Bob know $G$, $U$ and $V$. On input $x^*$ that corresponds to row
+        $x$ in $M_f$, Alice looks at row $x$ in $U$ and treats it as a bitmap
+        of nodes from $G$ that she has to choose as her clique, $C$. By
+        defintion of $G$, her choice of $C$ is guaranteed to be a clique.
+        \\\\
+        On input $y^*$ that corresponds to column $y$ in $M_f$, Bob looks at
+        column $y$ of $V$ and treats it as a bitmap of nodes from $G$ that he
+        has to choose as his independent set, $I$. We can show by contradiction
+        that Bob's choice of $I$ must be an independent set. Assume that $I$ is
+        not an independent set. This means that there is an edge between some
+        nodes in $I$. By construciton of $G$, this in turn implies that matrix
+        $U$ has some row $y^+$ that shares more than one index $i$ with $x$
+        such that $y^+_i * x_i = 1$, which implies that not all matrices in
+        relationship $M = UV$ are Boolean matrices, which is a contradiction.
+        Hence $I$ must be an indepdenent set.
+        \\\\
+        Note that no communication has yet occurred. Alice and Bob now solve
+        problem $CIS_G$ using inputs $C$ and $I$, using output of $CIS_G(C, I)$
+        as the result of running $f(x^*,y^*)$. Proof of correctness is trivial:
+        if $CIS_G$ outputs 1, then $C$ and $I$ share some common node $a_i$.
+        This implies that $x_i * y_i = 1$, $\inr{U_x, V^y} = 1$. The last
+        expression is equivalent to caculating the value of the element in
+        $M_f$ on which row $x$ and column $y$ intersect each other, i.e. the
+        output of $f(x, y)$. Similarly, if $CIS_G$ outputs $0$, we have
+        $\inr{U_x, V^y} = 0$ and $f(x,y) = 0$.
+        \\\\
+        We have shown in class that communication complexity of $CIS_G$ is
+        bounded above by $O(\log^2 n)$, where $n$ is the size of the graph. In
+        our case, size of the graph is $r = \textrm{Boolean-rank}(M_f)$, so we
+        can say that $$ D(M_f) \leq O(\log^2 \textrm{Boolean-rank}(M_f)) $$
+        This proves that log-rank conjecture holds for the proposed notion of
+        rank.
+        \\
 
     \item 
     \begin{enumerate}
@@ -147,12 +291,17 @@
             We're given that $f$ has nondeterministic complexity $t$, which
             implies that there exists a non-disjoint cover of $f$ with
             1-monochromatic cylinder intersections, with the size of this cover
-            being $2^t$. Since these cylinder intersections cover \textit{all}
-            1s and there are $2^t$ of them, we know that the largest cylinder
-            intersection in the cover must cover at least $2^{-t}$ fraction of
-            inputs $x^k$ s.t. $f(x^k) = 1$. As a result, we can conclude that
-            there exists a 1-monochromatic cylinder intersection $S$ such that
-            $\Pr_\mu \left(x^k \in S \given[\big] f(x^k) = 1\right) \geq
+            being $2^t$. Note that because this cover can be non-disjoint,
+            total sum of probabilities of an element belonging to these
+            cylinders can be greater than 1. Since these cylinder intersections
+            cover \textit{all} 1s and there are $2^t$ of them, they must
+            include at least one cylinder intersection $S$ such that
+            $\Pr_\mu(x^k \in S) \geq 2^{-t}$.  Otherwise, we would
+            have $\Pr_\mu(x^k \in S) < 2^{-t}$ for all of the $2^t$ 1-cylinder
+            intersections in the cover, which is a contradiction since the sum
+            of probabilities will be less than 1.  As a result, we can conclude
+            that there exists a 1-monochromatic cylinder intersection $S$ such
+            that $\Pr_\mu \left(x^k \in S \given[\big] f(x^k) = 1\right) \geq
             2^{-t}$.
             \\\\
             The function $f$ and given distribution $\mu$ are fixed, so we can
@@ -164,10 +313,7 @@
             intersection. This shows that the discrepancy is bounded below by
             $\Omega(2^{-t})$ given that nondeterministic or co-nondeterministic
             communication complexity of $f$ is $t$.
-            \\\\
-            \TODO{Check that this works for all distributions, not just
-            uniform?}
-            \\\\
+            \\
 
         \item We can view the input for the problem DISJ$_k$ as a $k \x n$
             Boolean matrix, where each player $i$ holds the string
