@@ -1,0 +1,541 @@
+\documentclass[10pt]{beamer}
+
+\usetheme[progressbar=frametitle]{metropolis}
+\usepackage{appendixnumberbeamer}
+
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{scrextend}
+\usepackage[scale=2]{ccicons}
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{dateplot}
+
+\usepackage{xspace}
+\newcommand{\themename}{\textbf{\textsc{metropolis}}\xspace}
+\usepackage{scrextend}
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+
+\mode<presentation> { \setbeamercovered{transparent} }
+\makeatletter
+\def\pdftex@driver{pdftex.def}
+\ifx\Gin@driver\pdftex@driver
+  \def\pgfsys@color@unstacked#1{%
+    \pdfliteral{\csname\string\color@#1\endcsname}%
+  }
+\fi
+\makeatother
+
+\newcommand\E{\mathop{\mathbb{E}}}
+\newcommand\CC{\textrm{CC}}
+\newcommand\IC{\textrm{IC}}
+\newcommand\T{\mathcal{T}}
+\newcommand\D{\mathbb{D}}
+\newcommand\defeq{\mathrel{\stackrel{\makebox[0pt]{\mbox{\normalfont\tiny def}}}{=}}}
+
+\title[Compressing interactive communication]{How to compress interactive communication}
+\author{Boaz Barak, Mark Braverman, Xi Chen, Anup Rao $[$BBCR09$]$}
+\date{Presentation by Timur Kuzhagaliyev, May 2018}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Communication complexity vs. conveyed information}
+\begin{itemize}
+    \pause
+    \item Amount of information conveyed $\leq$ communication complexity
+    \vskip 0.6cm
+    \pause
+    \item Measures of information:
+    \begin{itemize}
+        \vskip 0.3cm
+        \pause
+        \item \textbf{Information cost} (often used in previous work):
+            \begin{addmargin}[1em]{2em}% 1em left, 2em right
+            (Amount of) information that an \textit{observer} learns about inputs by observing messages and public randomness.
+            \end{addmargin}
+            \vskip 0.3cm
+        \pause
+        \item \textbf{Information content} (this paper):
+            \begin{addmargin}[1em]{2em}
+            (Amount of) information that \textit{parties} in the protocol learn from observing messages and public randomness, \textit{that they did not already know}.
+            \end{addmargin}
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Definitions from information theory 1}
+First definition - entropy:
+\pause
+    \begin{itemize}
+        \item \textbf{Entropy} of a random variable $X$ is defined as
+        $$ H(X) \defeq - \sum_{x} \Pr(X = x) log \Pr(X = x). $$
+        \pause
+        \item Conditional entropy is defined as
+        $$ H(X|Y) \defeq \sum_{y} \Pr(Y = y) H(X|Y=y). $$
+    \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Definitions from information theory 2}
+Second definition - mutual information:
+\pause
+    \begin{itemize}
+        \item \textbf{Mutual information} between two random variables $A, B$, denoted $I(A;B)$, is the quantity
+        $$ I(A;B) \defeq H(A) - H(A|B) = H(B) - H(B|A) $$
+        \pause
+        \item Conditional mutual information:
+        $$ I(A;B|C) \defeq H(A|C) - H(A|BC) = H(B|C) - H(B|AC) $$
+        \pause
+        \item Chain rule for mutual information, $X^n = X_1,\ldots,X_n$:
+        $$ I(X^n;Y) = \sum_{i = 1}^n I(X_i;Y \,|\, X_{i-1}, X_{i-2}, \ldots, X_{1})$$
+        
+    \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Information content}
+Now we're ready to define information content:
+    \begin{itemize}
+        \pause
+        \item Given a distribution $\mu$ on input $X, Y,$ and protocol $\pi$, the \textbf{information content} of $\pi$ is
+        $$ \IC_\mu(\pi) \defeq I(X; \pi(X,Y)|Y) + I(Y; \pi(X,Y)|X) $$
+        where $\pi(X, Y)$ is the \textit{transcript} of the protocol (concatenation of public randomness and exchanged messages).
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Properties of information content}
+\begin{itemize}
+    \pause
+    \item Each party knows their input, so protocol can only reveal \textit{less} information to them than an independent observer
+    \\ \textbf{$\Rightarrow$ information content $\leq$ information cost}
+    \vskip 0.6cm
+        \pause
+    \item When inputs are \textbf{independent}, information content is equal information cost
+    \vskip 0.6cm
+        \pause
+    \item When inputs are \textbf{dependent}, information content can be significantly smaller...
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Simple example}
+Consider the case when:
+\begin{itemize}
+    \item $\mu$ is a distribution on inputs where we always have $X = Y$
+        \pause
+    $$ \Downarrow $$
+    \item Any communication yields 0 information \textit{content}
+    \vskip 0.6cm
+    \item Information \textit{cost} can be arbitrarily large
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Limitations in previous work}
+\begin{itemize}
+    \pause
+    \item Using the notion of \textbf{information cost}
+    \begin{itemize}
+        \item As we have seen, it isn't always the best measure
+    \end{itemize}
+    \vskip 0.6cm
+        \pause
+    \item Trying to compress each message separately
+    \begin{itemize}
+        \item Inefficient when information content $<< 1$ for every bit of communication (can't afford to transmit even a single bit)
+    \end{itemize}
+        \pause
+    \vskip 1.4cm
+    \item Methods proposed in our paper eliminate both of these
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Compressing communication protocols 1}
+\begin{itemize}
+    \item The paper presented two new \textit{protocol compression} methods for protocols with communication complexity $C$ and information content $I$:
+    \begin{enumerate}
+        \pause
+        \vskip 0.3cm
+        \item For \textbf{non-product} distributions over input, compression down to complexity $Õ(\sqrt{I\cdot C})$
+        \vskip 0.3cm
+            \pause
+        \item For \textbf{product} distributions over input, compression down to complexity $Õ(\sqrt{I})$
+    \end{enumerate}
+    \vskip 0.3cm
+        \pause
+    \item It showed that we can transform protocol with \textbf{small information content} into a protocol with \textbf{small communication complexity} (in expectation). 
+    
+    \footnotetext[1]{$f(n) = Õ(g(n))$ is shorthand for $f(n) = O(g(n) log^k g(n))$ for some $k$}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Compressing communication protocols 2}
+Need some more definitions:
+\begin{itemize}
+    \vskip 0.5cm
+        \pause
+    \item Communication complexity of protocol $\pi$ is denoted $\CC(\pi)$.
+    \vskip 0.5cm
+        \pause
+    \item Let $D$ and $F$ be two random variables taking values in a set $S$. Their \textbf{statistical distance} is
+    \begin{align*}
+    |D - F| &\defeq \max_{T \subseteq S} (| \Pr(D \in T) - \Pr(F \in T) |)
+    \\ &= \frac{1}{2} \sum_{s \in S} | \Pr(D = s) - Pr(F = s)|
+    \end{align*}
+    
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Main theorem}
+\begin{alertblock}{Theorem 1.2}
+	There is a universal constant $c$ such that for every distribution $\mu$, every protocol $\pi$, every $\epsilon > 0$, there exist functions $\pi_x, \pi_y$ and a protocol $\tau$ such that:
+	\begin{itemize}
+	    \item $|\pi_x(X, \tau(X, Y)) - \pi(X, Y)| < \epsilon,$
+	    \vskip 0.4cm
+	    \item $\Pr \left( \pi_x(X, \tau(X, Y)) \neq \pi_y(Y, \tau(X, Y) \right) < \epsilon,$ and 
+	    \vskip 0.6cm
+	\end{itemize}
+	$$ \CC(\tau) \leq c \sqrt{\CC(\pi) \cdot \IC(\pi)} \cdot \frac{\log(\CC(\pi)/\epsilon)}{\epsilon} $$
+\end{alertblock}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Breakdown of the main theorem}
+\begin{alertblock}{Theorem 1.2}
+	\begin{itemize}
+	    \pause
+	    \item $|\pi_x(X, \tau(X, Y)) - \pi(X, Y)| < \epsilon$
+	    \vskip 0.2cm
+	    \begin{itemize}
+	        \item Ensures that transcript of $\tau$ specifies a unique leaf that is $\epsilon$-close in statistical distance to the leaf sampled by $\pi$
+	    \end{itemize}
+	        \pause
+	        
+	    \vskip 0.2cm
+	    \item $\Pr \left( \pi_x(X, \tau(X, Y)) \neq \pi_y(Y, \tau(X, Y) \right) < \epsilon$
+	    \vskip 0.2cm
+	    \begin{itemize}
+	        \item Guarantees with high probability that both players agree on what the sampled leaf was
+	    \end{itemize}
+	    \vskip 0.4cm
+	        \pause
+	    \item Thus the triple $\tau, \pi_x, \pi_y$ can be used to specify a new protocol that is a compression of $\pi$.
+	\end{itemize}
+\end{alertblock}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 1}
+\begin{itemize}
+    \item To prove Theorem 1.2, we first consider protocol tree $\T$ for $\pi_r$, for every fixing of public randomness $r$. Let $R$ be the random variable for the public randomness in $\pi$.
+        \pause
+    \vskip 0.6cm
+    \item \textbf{Claim}: $\IC_\mu(\pi) = \E_R[\IC_\mu(\pi_R)]$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 2}
+\textbf{Proof}:
+    \begin{align*}
+    \IC_\mu(\pi) &= I(\pi(X,Y); X|Y) + I(\pi(X,Y); Y|X) \pause
+              \\ {&= I(R \pi_R(X, Y); X|Y) + I(R\pi_R(X, Y); Y|X)} \pause
+              \\ &= I(R; X|Y) + I(R; Y|X) + I(\pi_R(X, Y); X|YR)
+              \\ &\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad + I(\pi_R(X, Y); Y|XR) \pause
+              \\ &= I(\pi_R(X, Y); X|YR) + I(\pi_R(X, Y); Y|XR) \pause
+              \\ &= \E_R[\IC_\mu(\pi_R)]
+    \end{align*}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 3}
+\begin{itemize}
+    \item \textbf{Useful trick}: We can describe protocol $\pi_r$ in a non-standard but equivalent way (see board).
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 4}
+\begin{itemize}
+    \item \textbf{Main idea}: Simulate protocol $\pi$, trying to avoid communicating by guessing what the other player's sample looks like.
+    \vskip 0.2cm
+    \pause
+    \item Players can make many mistakes, but these mistakes can be corrected using the following lemma:
+    \vskip 0.4cm
+\begin{alertblock}{Lemma of Feige et al. [FPRU94]}
+	There is a randomized public coin protocol $\tau$ with communication complexity $O(\log(k/\epsilon))$ such that on input two $k$-bit strings $x,y$, it outputs the first index $i \in [k]$ such that $x_i \neq y_i$ with probability at least $1 - \epsilon$, if such an $i$ exists.
+\end{alertblock}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 5}
+We define a new protocol $\tau_{\beta, \gamma}$ for some error parameters $\beta, \gamma$, with three phases. Description is for player $P_x$, but we can just replace $x$ with $y$ to obtain a description for player $P_y$.
+\vskip 0.5cm
+\pause
+\begin{itemize}
+    \item \textbf{Phase 1: Public sampling}
+    \begin{enumerate}
+        \item Sample $r$ according to the distribution of public randomness in $\pi$.
+    \end{enumerate}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 6}
+\begin{itemize}
+    \item \textbf{Phase 2: Correlated sampling}: 
+    \begin{enumerate}
+    \pause
+        \item For every non-leaf node $w$ in the tree, let $k_w$ be uniformly random element of $[0,1]$ sampled using public randomness.
+        \vskip 0.2cm
+        \pause
+        \item On input $x$, player $P_x$ defines the tree $\T_x$ the following way:
+        \vskip 0.2cm
+        For each node $w$, player includes the edge to the left child of $w$ if the following holds:
+        $$ \Pr( \textrm{$\pi_r(X,Y)$ reaches left child} \;|\; \textrm{$\pi_r(X,Y)$ reaches $w$ and $X = x$} ) > k_w $$
+        Otherwise, right child is picked. Note that if $P_x$ owns $w$, the calculated probability for the left child of $w$ is always ``correct''.
+    \end{enumerate}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 7}
+\begin{itemize}
+    \item \textbf{Phase 3: Path finding}: 
+    \begin{enumerate}
+    \pause
+        \item Each of the players computes the unique path in their trees that leads from the root to a leaf.
+        \vskip 0.2cm
+        \pause
+        \item Players use lemma from earlier, communicating $O(log(\CC(\pi)/\beta))$ bits to find the first node at which their paths differ (if it exists). The relevant edge is then corrected in favour of the player who owns the node. The player who does not own the node recomputes their path.
+        \vskip 0.2cm
+        \pause
+        \item Players repeatedly correct their paths $\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}/\gamma$ times.
+    \end{enumerate}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 8}
+\begin{itemize}
+    \item The protocol we defined, $\tau_{\beta, \gamma}$, has the following upper bound for communication complexity by design:
+    $$ \CC(\tau_{\beta, \gamma}) \leq O \left( \sqrt{\CC(\pi) \cdot \IC(\pi)} \cdot  \frac{\log(\CC(\pi)/\beta)}{\gamma} \right)$$
+    \pause
+    \vskip 0.4cm
+    \item Let $V = V_0, \ldots, V_{\CC(\pi)}$ denote the ``right path'' in the protocol tree of $\tau_{\beta, \gamma}$, i.e. for every $i$, $V_{i+1}$ was picked by the owner of $V_i$. This path has the right distribution, since every child is sampled with exactly the right conditional by the corresponding owner.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 9}
+\begin{itemize}
+    \item That is, the following claim holds: For every $x, y, r$, the distribution $V|xyr$ as defined above is the same as the distribution of the sampled transcript in the protocol $\pi$.
+    \vskip 0.4cm
+    \pause
+    \item This implies:
+    $$ I(X; V|rY) + I(Y; V|rX) = \IC_\mu(\pi_r) $$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 10}
+We can now show that the expected number of mistakes is small.
+\begin{itemize}
+    \item \textbf{Claim:}
+    $\E[\;\textrm{\# of mistakes in simulating $\pi_r$} \;|\; r\;]  \leq \sqrt{\CC(\pi) \cdot \IC_\mu(\pi_r)}$
+    \vskip 0.2cm
+    \item \textbf{Proof}: For $i = 1, \ldots, \CC(\pi)$, denote by $C_{ir}$ the indicator random variable for whether or not a mistake occurs at level $i$, i.e. the edges $V_{i-1}$ are inconsistent in the trees.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 11}
+\textbf{Proof (cont.)}:
+\begin{itemize}
+    \item We can bound $\E[C_{ir}]$ for each $i$: Note that a mistake occurs at the relevant edge when either:
+    \vskip 0.1cm
+    \begin{enumerate}
+        \item $P_x$'s probability is greater than $k_w$, while $P_y$'s is smaller than $k_w$.
+        \vskip 0.1cm
+        \item $P_y$'s probability is greater than $k_w$, while $P_x$'s is smaller than $k_w$.
+    \end{enumerate}
+    \pause
+    \vskip 0.2cm
+    \item Denote the event of the protocol reaching a particular node at level $i-1$ as $v_{<i}$. 
+    \vskip 0.2cm
+    \pause
+    \item Combining the two cases from before in which a mistake occurs, we get that the probability that a mistake occurs at level $i$ is at most $$|(V_i | xv_{<i}r) - (V_i | yv_{<i}r)|.$$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 12}
+\textbf{Some more definitions}:
+\begin{itemize}
+\pause
+    \item Informational \textbf{divergence} between two distributions is defined as
+    $$ \D(A \,||\, B) = \sum_x A(x) \log \left( \frac{A(x)}{B(x)} \right) $$
+    \pause
+    \item \textit{Property \#1}: $ \D(A \,||\, B) \geq |A - B|^2 $
+    \vskip 0.1cm
+    \pause
+    \item \textit{Property \#2}: Let $A, B, C$ be random variables in the same probability space. For every $a \in \textrm{supp}(A)$ and every $c \in \textrm{supp}(C)$, let $B_a$ denote ``$B | A = a$'' and $B_{ac}$ denote ``$B|A = a, C = c$''. Then $$I(A;B|C) = \E_{a,c \in_R A,C}[\D(B_{ac} \,||\,B_c)]$$
+    \vskip 0.2cm
+    \pause
+    \item Reminders: $\qquad \E \left[\sum_i X_i \right] = \sum_i \E[X_i] \qquad\qquad \E \left[\sqrt{X} \right] \leq \sqrt{\E[X]}$
+    \vskip 0.2cm
+    \item Cauchy Schwartz: $\qquad (\E[AB])^2 \leq \E[A]^2\E[B]^2$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 13}
+\textbf{Proof (cont.)}:
+\begin{align*}
+    &\E[C_{ir}]
+    \\ &\leq \E_{xyv_{<i} \in_R XYV_{<i}}[|(V_i|xv_{<i}r) - (V_i|yv_{<i}r)|] \pause
+    \\ &\leq \E_{xyv_{<i} \in_R XYV_{<i}} [\max\{ |(V_i|xyv_{<i}r) - (V_i|yv_{<i}r)|, |(V_i|xyv_{<i}r) - (V_i|xv_{<i}r)| \}] \pause
+    \\ &\leq \E_{xyv_{<i} \in_R XYV_{<i}} \left[ \sqrt{ \D(V_i|xyv_{<i}r \,||\, V_i|yv_{<i}r) + \D(V_i|xyv_{<i}r \,||\, V_i|yv_{<i}r)} \right] \pause
+    \\ &\leq \sqrt{ \E_{xyv_{<i} \in_R XYV_{<i}} \left[ \D(V_i|xyv_{<i}r \,||\, V_i|yv_{<i}r) + \D(V_i|xyv_{<i}r \,||\, V_i|yv_{<i}r) \right] } \pause
+    \\ &= \sqrt{I(X; V_i \;|\; YV_{<i}r) + I(Y; V_i \;|\; XV_{<i}r)}
+\end{align*}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 14}
+\textbf{Proof (cont.)}: Showing total number of mistakes simulating $\pi_r$ is small:
+\begin{align*}
+    \E \left[ \sum_{i=1}^{\CC(\pi)} C_{ir} \right] &= \sum_{i=1}^{\CC(\pi)} \E[C_{ir}] \pause
+    \qquad \leq \sum_{i=1}^{\CC(\pi)} \sqrt{(\E[\sqrt{\CC(\pi)} \cdot C_{ir}])^2} \pause
+    \\ &\leq \sqrt{\CC(\pi) \sum_{i=1}^{\CC(\pi)} \E[C_{ir}]^2} \pause
+    \\ &\leq \sqrt{\CC(\pi) \sum_{i=1}^{\CC(\pi)} \left( I(X; V_i \;|\; YV_{<i}r) + I(Y; V_i \;|\; XV_{<i}r) \right)} \pause
+    \\ &= \sqrt{\CC(\pi) \cdot \left( I(X; V^{\CC(\pi)} \;|\; Yr) + I(Y; V^{\CC(\pi)} \;|\; Xr) \right)} \pause
+    \\ &= \sqrt{\CC(\pi) \cdot \IC_\mu(\pi_r)}
+\end{align*}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 15}
+Finally, we can show that the overall total number of mistakes simulating $\pi$ is small:
+\begin{align*}
+    \E[\;\textrm{\# of mistakes in simulating $\pi$}\;]  &= \E_R[\;\textrm{\# of mistakes in simulating $\pi_R$}\;] \pause
+    \\ &\leq \E_R[\sqrt{\CC(\pi) \cdot \IC_\mu(\pi_R)}] \pause
+    \\ &\leq \sqrt{\E_R[\CC(\pi) \cdot \IC_\mu(\pi_R)]} \pause
+    \\ &= \sqrt{\CC(\pi) \cdot \IC_\mu(\pi)} 
+\end{align*}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 16}
+The protocol fails when both players \textbf{do not} finish with the (same) leaf $V_{\CC(\pi)}$, which happens when either:
+\begin{enumerate}
+\pause
+    \vskip 0.4cm
+    \item The number of mistakes in the correct path is larger than $\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}/\gamma$
+    \vskip 0.4cm
+    \pause
+    \item Mistake-correction protocol fails to correct all mistakes
+\end{enumerate}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 17}
+\begin{enumerate}
+    \vskip 0.3cm
+    \item The number of mistakes in the correct path is larger than $\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}/\gamma$
+    \begin{itemize}
+    \pause
+        \vskip 0.2cm
+        \item Can use Markov's inequality and the result for expected number of errors from before:
+        \begin{align*}
+            \Pr[ \textrm{\# of mistakes} \geq  a ] &\leq \frac{\E[\; \textrm{\# of mistakes} \;]}{a}
+            \\ &= \frac{\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}}{\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}/\gamma}
+            \\ &= \gamma
+        \end{align*} 
+    \end{itemize}
+    \vskip 0.3cm
+    \pause
+    \item Mistake-correction protocol fails to correct all mistakes
+    \pause
+    \begin{itemize}
+        \vskip 0.2cm
+        \item There are $\sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}/\gamma$ correction steps, and correction fails with probability $\beta$, giving total error probability of $\beta/\gamma \cdot \sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}$
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 18}
+\begin{itemize}
+    \item By union bound, the probability of failure is bounded by
+    $$\gamma + \beta/\gamma \cdot \sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}$$
+    \pause
+    \item Set $\beta = \gamma^2 / \CC(\pi)$:
+    \begin{align*}
+        \gamma + \beta/\gamma \cdot \sqrt{\CC(\pi) \cdot \IC_\mu(\pi)} &= \gamma + \frac{\gamma^2 / \CC(\pi)}{\gamma} \cdot \sqrt{\CC(\pi) \cdot \IC_\mu(\pi)}
+        \\ &= \gamma + \gamma \cdot \sqrt{\frac{\IC_\mu(\pi)}{\CC(\pi)}}
+        \\ &\leq 2 \gamma
+    \end{align*}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Proof of the main theorem 19}
+\begin{itemize}
+    \item Finally, setting $\epsilon = 2\gamma$, we get that the probability of failure is at most $\epsilon.$
+    \pause
+    \item Recall that by design, the protocol has complexity
+    $$ \CC(\tau_{\beta, \gamma}) \leq O \left( \sqrt{\CC(\pi) \cdot \IC(\pi)} \cdot  \frac{\log(\CC(\pi)/\beta)}{\gamma} \right)$$
+    which, with our substitutions, becomes just
+    $$ \CC(\tau_{\beta, \gamma}) \leq O \left( \sqrt{\CC(\pi) \cdot \IC(\pi)} \cdot  \frac{\log(\CC(\pi)/\epsilon)}{\epsilon} \right)$$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Wrap up}
+Thus we have proved the theorem:
+
+\begin{alertblock}{Main theorem}
+	There is a universal constant $c$ such that for every distribution $\mu$, every protocol $\pi$, every $\epsilon > 0$, there exist functions $\pi_x, \pi_y$ and a protocol $\tau$ such that:
+	\begin{itemize}
+	    \item $|\pi_x(X, \tau(X, Y)) - \pi(X, Y)| < \epsilon,$
+	    \vskip 0.4cm
+	    \item $\Pr \left( \pi_x(X, \tau(X, Y)) \neq \pi_y(Y, \tau(X, Y) \right) < \epsilon,$ and 
+	    \vskip 0.6cm
+	\end{itemize}
+	$$ \CC(\tau) \leq c \sqrt{\CC(\pi) \cdot \IC(\pi)} \cdot \frac{\log(\CC(\pi)/\epsilon)}{\epsilon} $$
+\end{alertblock}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{The end}
+\begin{center}
+    \textbf{\huge Thanks for listening!}
+    \vskip 1cm
+\end{center}
+{
+    \small
+    \textbf{References}
+    \vskip 0.2cm
+    \\ $[$BBCR09$]$ B. Barak, M. Braverman, X. Chen and A. Rao, How to Compress
+    \\ $\quad$ Interactive Communication. \textit{SIAM J. Comput.}, 42(3):1327–1363 2009.
+    \vskip 0.2cm
+    \\ $[$FPRU94$]$ U. Feige, D. Peleg, P. Raghavan, and E. Upfal. Computing with
+    \\ $\quad$ noisy information. \textit{SIAM Journal on Computing}, 23(5):1001-1018, 1994.
+}
+\end{frame}
+
+\end{document}
+
